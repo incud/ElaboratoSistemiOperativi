@@ -11,7 +11,7 @@ int apri_file_lettura(const char* path, struct BufferedReader* br)
 {
 	int fd = open(path, O_RDONLY, 0600);
 	if(fd < 0) {
-		stampa_formattato(STDOUT_FILENO, "\tImpossibile aprire il file: %s\n", strerror(errno)); 
+		stampa(STDOUT_FILENO, "\tImpossibile aprire il file: %s\n", strerror(errno)); 
 		return -1;
 	} else {
 		br->fileno = fd;
@@ -89,9 +89,9 @@ int leggi_matrice_quadrata(struct BufferedReader* br, int* matrice, const int or
 	for(i = 0; i < ordine * ordine; i++) {
 		int esito = leggi_intero(br, &numero);
 		if(esito < 0) { 
-			stampa_formattato(STDOUT_FILENO, "\tErrore durante la lettura della matrice\n"); 
+			stampa(STDOUT_FILENO, "\tErrore durante la lettura della matrice\n"); 
 		} else {
-			stampa_formattato(STDOUT_FILENO, "\tLetto: %i\n", numero); 
+			stampa(STDOUT_FILENO, "\tLetto: %i\n", numero); 
 			matrice[i] = numero;
 		}
 	}
@@ -116,7 +116,7 @@ int leggi_matrice_quadrata_automatizzato(const char* path, int* matrice, const i
 	return 0;
 }
 
-int stampa_formattato(int fileno, const char* formato, ...)
+int stampa(int fileno, const char* formato, ...)
 {
 	char buffer[DISKIO_BUFFER_SIZE];
 
@@ -136,15 +136,15 @@ int stampa_matrice_quadrata(const char* path, const int* matrice, const int ordi
 {
 	int fileno = open(path, O_WRONLY | O_CREAT , 0666);
 	if(fileno < 0) { 
-		stampa_formattato(STDOUT_FILENO, "\tImpossibile aprire il file: %s\n", strerror(errno)); 
+		stampa(STDOUT_FILENO, "\tImpossibile aprire il file: %s\n", strerror(errno)); 
 		return -1; 
 	}
 
 	int i;
 	for(i = 0; i < ordine * ordine; i++) {
-		int esito = stampa_formattato(fileno, "%i ", matrice[i]);
+		int esito = stampa(fileno, "%i ", matrice[i]);
 		if(esito < 0) { 
-			stampa_formattato(STDOUT_FILENO, "\tErrore durante la scrittura della matrice: %s\n", strerror(errno)); 
+			stampa(STDOUT_FILENO, "\tErrore durante la scrittura della matrice: %s\n", strerror(errno)); 
 			return -1;
 		}
 	}

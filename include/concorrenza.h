@@ -1,16 +1,12 @@
 #ifndef CONCORRENZA_H_
 #define CONCORRENZA_H_
 
-/** Permessi per la gestione della shared memory */
-#define SHAREDMEMORY_PERMESSI 0644
-/** Permessi per la gestione dei semafori */
-#define SEMAPHOREPOOL_PERMESSI 0644
-/** Permessi per la gestione delle message queue */
-#define MESSAGEQUEUE_PERMESSI 0644
+/** Permessi per la gestione della memoria condivisa, semafori e coda di messaggi */
+#define CONCORRENZA_PERMESSI 0644
 
 #define SEMAFORO_PROCESSI_LIBERI 0
 #define SEMAFORO_MUTEX_RISULTATO 1
-#define BASE_SEMAFORI_CONTATORI 2
+#define BASE_SEMAFORI_MUTEX_CONTATORI 2
 
 struct Concorrenza 
 {
@@ -40,24 +36,38 @@ struct Concorrenza
 	int* risultato;
 };
 
+/* ================= CREAZIONE STRUTTURA ================= */
+
 int crea_struttura_concorrenza(struct Concorrenza* conc, int ordine, int nProcessi);
 
-int sincronizza_memoria_condivisa(struct Concorrenza* conc);
-
 int distruggi_struttura_concorrenza(struct Concorrenza* conc);
+
+/* ================= GESTIONE SEMAFORI ================= */
+
+int inizializza_semafori(struct Concorrenza* conc);
 
 int incrementa_semaforo(struct Concorrenza* conc, int semaforo);
 
 int decrementa_semaforo(struct Concorrenza* conc, int semaforo);
 
-int incrementa_contatore_riga(struct Concorrenza* conc, int riga);
+void segnala_processo_libero(struct Concorrenza* conc);
 
-int aspetta_contatore_riga(struct Concorrenza* conc, int riga);
+void aspetta_processo_libero(struct Concorrenza* conc);
 
-int manda_messaggio_coda(struct Concorrenza* conc, int indice);
+void segnala_cella_della_riga_completata(struct Concorrenza* conc, int riga);
 
-int ricevi_messaggio_coda(struct Concorrenza* conc, int* indice);
+void aspetta_intera_riga_completata(struct Concorrenza* conc, int riga);
 
-int estrai_numero_messaggi_coda(struct Concorrenza* conc, int* n);
+/* ================= GESTIONE CODA ================= */
+
+int manda_indice_in_coda(struct Concorrenza* conc, int indice);
+
+int ricevi_indice_dalla_coda(struct Concorrenza* conc, int* indice);
+
+int ottieni_numero_messaggi_coda(struct Concorrenza* conc, int* n);
+
+/* ================= GESTIONE MEMORIA CONDIVISA ================= */
+
+int inizializza_memoria_condivisa(struct Concorrenza* conc);
 
 #endif

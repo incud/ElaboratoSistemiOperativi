@@ -69,7 +69,7 @@ int leggi_matrice_quadrata_automatizzato(const char* path, int* matrice, const i
  * @param[in] formato formato della stringa (secondo le regole della printf)
  * @return 0 se tutto ok, < 0 in caso di errori
  */
-int stampa_formattato(int fileno, const char* formato, ...);
+int stampa(int fileno, const char* formato, ...);
 
 /** 
  * Stampa su file la matrice indicata

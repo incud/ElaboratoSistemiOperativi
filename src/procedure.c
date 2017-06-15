@@ -6,39 +6,71 @@
 #include <string.h>
 #include <unistd.h>
 
-static void chiudi_pipe_fino_indice(struct Concorrenza* conc, int index)
+/* ================= GESTIONE SEGNALI ================= */
+
+static int PID_PADRE;
+static struct Concorrenza* CONC_GLOBAL;
+
+void registra_padre_nel_handler_interrupt(int pidPadre, struct Concorrenza* conc)
 {
-	int i;
-	for(i = 0; i < index; i++) {
-		close(conc->celle[i].pipe[1]);
+	PID_PADRE = pidPadre;
+	CONC_GLOBAL = conc;
+	signal(SIGUSR1, handler_interrupt);
+}
+
+void termina_tutti_figli()
+{
+	kill(-1 * getpid(), SIGUSR1); // mando segnale al processo corrente e tutti i suo figli
+}
+
+void handler_interrupt(int segnale)
+{
+	if(segnale == SIGUSR1) {
+		if(getpid() != PID_PADRE) {
+			exit(0);
+		} else {
+			termina_tutti_figli();
+			distruggi_struttura_concorrenza(CONC_GLOBAL);
+			exit(1);
+		}
 	}
 }
+
+/* ================= PROCEDURE ================= */
 
 int inizializza_processi(struct Concorrenza* conc)
 {
 	int i;
-	for(i = 0; i < conc->nProcessi; i++) {
 
+	// inizializzo contatori
+	for(i = 0; i < conc->ordine; i++) {
+		conc->contatori[i] = 0;
+	}
+
+	// inizializzo cella risultati
+	conc->risultato[0] = 0;
+
+	// inizializzo celle
+	for(i = 0; i < conc->nProcessi; i++) {
 		conc->celle[i].libero = 1;
+	}
+
+	// creo i processi
+	for(i = 0; i < conc->nProcessi; i++) {
 
 		// creazione pipe
 		if(pipe(conc->celle[i].pipe) < 0) {
-			chiudi_pipe_fino_indice(conc, i);
-			kill(-1 * getpid(), SIGUSR1); // uccido tutti i figli
 			return -1;
 		}
 
 		// creazione processo figlio
 		int esito = fork();
 		if(esito < 0) {
-			chiudi_pipe_fino_indice(conc, i);
-			kill(-1 * getpid(), SIGUSR1); // uccido tutti i figli
 			return -1;
 
 		} else if(esito == 0) {
 			// figlio
 			close(conc->celle[i].pipe[1]); // chiudo la pipe in scrittura, non mi serve
-			sincronizza_memoria_condivisa(conc);
 			avvia_procedura_lavoratore(conc, i);
 
 		} else {
@@ -47,33 +79,26 @@ int inizializza_processi(struct Concorrenza* conc)
 		}
 	}
 
-	for(i = 0; i < conc->ordine; i++) {
-		
-	}
-	conc->risultato[0] = 0;
-
 	return 0;
 }
 
-static void aspetta_processo_libero(struct Concorrenza* conc) {
-	decrementa_semaforo(conc, SEMAFORO_PROCESSI_LIBERI);
-}
-
 static void svuota_lista_completati(struct Concorrenza* conc) {
-	// estraggo numero messaggi
+	
 	int nMessaggi, i;
-	if(estrai_numero_messaggi_coda(conc, &nMessaggi) < 0) {
-		stampa_formattato(STDOUT_FILENO, "[Padre ] Impossibile prendere numero messaggi coda\n");
+
+	// estraggo numero messaggi
+	if(ottieni_numero_messaggi_coda(conc, &nMessaggi) < 0) {
+		stampa(STDOUT_FILENO, "[Padre ] Impossibile prendere numero messaggi coda\n");
 		nMessaggi = 0;
 	} else {
-		stampa_formattato(STDOUT_FILENO, "[Padre ] Nella coda ci sono %i messaggi\n", nMessaggi);
+		stampa(STDOUT_FILENO, "[Padre ] Nella coda ci sono %i messaggi\n", nMessaggi);
 	}
 
 	// estraggo messaggi
 	for(i = 0; i < nMessaggi; i++) {
 		int indice;
-		if(ricevi_messaggio_coda(conc, &indice) < 0) {
-			stampa_formattato(STDOUT_FILENO, "[Padre ] Errore nella ricezione del messaggio\n");
+		if(ricevi_indice_dalla_coda(conc, &indice) < 0) {
+			stampa(STDOUT_FILENO, "[Padre ] Errore nella ricezione del messaggio\n");
 		} else {
 			conc->celle[indice].libero = 1;
 		}
@@ -87,6 +112,8 @@ static int cerca_processo_libero(struct Concorrenza* conc) {
 			return i;
 		}
 	}
+	// errore: nessun indice libero
+	stampa(STDOUT_FILENO, "[Padre ] Non ho trovato nessun processo libero (il semaforo non funziona?)\n");
 	return -1;
 }
 
@@ -106,9 +133,9 @@ int avvia_procedura_gestore(struct Concorrenza* conc)
 			conc->celle[indice].j = j;
 			// mando il messaggio
 			if(write(conc->celle[indice].pipe[1], "M", 1) < 0) {
-				stampa_formattato(STDOUT_FILENO, "[Padre ] Impossibile inviare comando attraverso PIPE\n");
+				stampa(STDOUT_FILENO, "[Padre ] Impossibile inviare comando attraverso PIPE\n");
 			} else {
-				stampa_formattato(STDOUT_FILENO, "[Padre ] Inviato a (Proc %i) la cella i=%i; j=%i\n", indice, conc->celle[indice].i, conc->celle[indice].j);
+				stampa(STDOUT_FILENO, "[Padre ] Inviato a (Proc %i) la cella i=%i; j=%i\n", indice, conc->celle[indice].i, conc->celle[indice].j);
 			}
 		}
 	}
@@ -123,30 +150,22 @@ int avvia_procedura_gestore(struct Concorrenza* conc)
 		conc->celle[indice].riga = i;
 		// mando il messaggio
 		if(write(conc->celle[indice].pipe[1], "S", 1) < 0) {
-			stampa_formattato(STDOUT_FILENO, "[Padre ] Impossibile inviare comando attraverso PIPE\n");
+			stampa(STDOUT_FILENO, "[Padre ] Impossibile inviare comando attraverso PIPE\n");
 		} else {
-			stampa_formattato(STDOUT_FILENO, "[Padre ] Inviato a (Proc %i) la riga %i\n", indice, conc->celle[indice].riga);
+			stampa(STDOUT_FILENO, "[Padre ] Inviato a (Proc %i) la riga %i\n", indice, conc->celle[indice].riga);
 		}
-	}
-	
-	for(i = 0; i < conc->nProcessi; i++) {
-		stampa_formattato(STDOUT_FILENO, "\tIndice %i - Riga %i\n", i, conc->celle[i].riga);
 	}
 
 	// mando i messaggi di uscita
 	for(i = 0; i < conc->nProcessi; i++) {
 		if(write(conc->celle[i].pipe[1], "E", 1) < 0) {
-			stampa_formattato(STDOUT_FILENO, "[Padre ] Impossibile inviare messaggio\n");
+			stampa(STDOUT_FILENO, "[Padre ] Impossibile inviare messaggio\n");
 		} else {
-			stampa_formattato(STDOUT_FILENO, "[Padre ] Inviato messaggio d'uscita al processo %i\n", i);
+			stampa(STDOUT_FILENO, "[Padre ] Inviato messaggio d'uscita al processo %i\n", i);
 		}
 	}
 
 	return 0;
-}
-
-static void sblocca_processo(struct Concorrenza* conc) {
-	incrementa_semaforo(conc, SEMAFORO_PROCESSI_LIBERI);
 }
 
 int avvia_procedura_lavoratore(struct Concorrenza* conc, int index)
@@ -167,13 +186,13 @@ int avvia_procedura_lavoratore(struct Concorrenza* conc, int index)
 				j = conc->celle[index].j;
 				risultato = 0;
 
-				stampa_formattato(STDOUT_FILENO, "[Proc %i] Moltiplica i=%i; j=%i\n", index, i, j);
+				stampa(STDOUT_FILENO, "[Proc %i] Moltiplica i=%i; j=%i\n", index, i, j);
 				for(k = 0; k < N; k++) {
 					risultato += conc->matriceA[i*N + k] * conc->matriceB[k*N + j];
 				}
 				conc->matriceC[i*N + j] = risultato;
 
-				incrementa_contatore_riga(conc, i);
+				segnala_cella_della_riga_completata(conc, i);
 
 				sleep(5);
 
@@ -185,9 +204,9 @@ int avvia_procedura_lavoratore(struct Concorrenza* conc, int index)
 
 				sleep(1);
 
-				aspetta_contatore_riga(conc, riga);
+				aspetta_intera_riga_completata(conc, riga);
 
-				stampa_formattato(STDOUT_FILENO, "[Proc %i] Somma riga=%i\n", index, riga);
+				stampa(STDOUT_FILENO, "[Proc %i] Somma riga=%i\n", index, riga);
 				for(j = 0; j < N; j++) {
 					risultato += conc->matriceC[riga * N + j];
 				}
@@ -201,17 +220,18 @@ int avvia_procedura_lavoratore(struct Concorrenza* conc, int index)
 				break;
 			case 'E':
 			case 'e':
-				stampa_formattato(STDOUT_FILENO, "[Proc %i] Uscita\n", index);
+				stampa(STDOUT_FILENO, "[Proc %i] Uscita\n", index);
 				exit(0);
 			default:
-				stampa_formattato(STDOUT_FILENO, "[Proc %i] Messaggio sconosciuto: %c\n", index, messaggio);
+				stampa(STDOUT_FILENO, "[Proc %i] Messaggio sconosciuto: %c\n", index, messaggio);
 				break;
 		}
 
-		if(manda_messaggio_coda(conc, index) < 0) {
-			stampa_formattato(STDOUT_FILENO, "[Proc %i] Errore nell'invio della conferma al padre: %s\n", index, strerror(errno));
+		if(manda_indice_in_coda(conc, index) < 0) {
+			stampa(STDOUT_FILENO, "[Proc %i] Errore nell'invio della conferma al padre: %s\n", index, strerror(errno));
 		}
-		sblocca_processo(conc);
+
+		segnala_processo_libero(conc);
 
 		sleep(3);
 	}
