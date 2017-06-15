@@ -168,58 +168,58 @@ int avvia_procedura_gestore(struct Concorrenza* conc)
 	return 0;
 }
 
+void esegui_moltiplicazione(struct Concorrenza* conc, int index)
+{
+	int i, j, k, N = conc->ordine, risultato;
+	i = conc->celle[index].i;
+	j = conc->celle[index].j;
+	risultato = 0;
+
+	stampa(STDOUT_FILENO, "[Proc %i] Moltiplica i=%i; j=%i\n", index, i, j);
+	for(k = 0; k < N; k++) {
+		risultato += conc->matriceA[i*N + k] * conc->matriceB[k*N + j];
+	}
+	conc->matriceC[i*N + j] = risultato;
+
+	segnala_cella_della_riga_completata(conc, i);
+}
+
+void esegui_somma(struct Concorrenza* conc, int index)
+{
+	int N = conc->ordine, risultato, riga, j;
+	riga = conc->celle[index].riga;
+	risultato = 0;
+
+	aspetta_intera_riga_completata(conc, riga);
+
+	stampa(STDOUT_FILENO, "[Proc %i] Somma riga=%i\n", index, riga);
+	for(j = 0; j < N; j++) {
+		risultato += conc->matriceC[riga * N + j];
+	}
+
+	decrementa_semaforo(conc, SEMAFORO_MUTEX_RISULTATO);
+	conc->risultato[0] += risultato;
+	incrementa_semaforo(conc, SEMAFORO_MUTEX_RISULTATO);
+}
+
 int avvia_procedura_lavoratore(struct Concorrenza* conc, int index)
 {
-	int i, j, k, N = conc->ordine, risultato, riga;
-
 	while(1) {
 		char messaggio;
 		read(conc->celle[index].pipe[0], &messaggio, 1);
 
 		switch(messaggio) {
 			case 'M':
-			case 'm':
-
 				sleep(5);
-
-				i = conc->celle[index].i;
-				j = conc->celle[index].j;
-				risultato = 0;
-
-				stampa(STDOUT_FILENO, "[Proc %i] Moltiplica i=%i; j=%i\n", index, i, j);
-				for(k = 0; k < N; k++) {
-					risultato += conc->matriceA[i*N + k] * conc->matriceB[k*N + j];
-				}
-				conc->matriceC[i*N + j] = risultato;
-
-				segnala_cella_della_riga_completata(conc, i);
-
+				esegui_moltiplicazione(conc, index);
 				sleep(5);
-
 				break;
 			case 'S':
-			case 's':
-				riga = conc->celle[index].riga;
-				risultato = 0;
-
 				sleep(1);
-
-				aspetta_intera_riga_completata(conc, riga);
-
-				stampa(STDOUT_FILENO, "[Proc %i] Somma riga=%i\n", index, riga);
-				for(j = 0; j < N; j++) {
-					risultato += conc->matriceC[riga * N + j];
-				}
-
-				decrementa_semaforo(conc, SEMAFORO_MUTEX_RISULTATO);
-				conc->risultato[0] += risultato;
-				incrementa_semaforo(conc, SEMAFORO_MUTEX_RISULTATO);
-
+				esegui_somma(conc, index);
 				sleep(5);
-
 				break;
 			case 'E':
-			case 'e':
 				stampa(STDOUT_FILENO, "[Proc %i] Uscita\n", index);
 				exit(0);
 			default:
