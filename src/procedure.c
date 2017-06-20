@@ -15,7 +15,10 @@ void registra_padre_nel_handler_interrupt(int pidPadre, struct Concorrenza* conc
 {
 	PID_PADRE = pidPadre;
 	CONC_GLOBAL = conc;
-	signal(SIGUSR1, handler_interrupt);
+	signal(SIGUSR1, handler_interrupt); // segnale di kill inviato dalla funzione 'termina_tutti_figli'
+	signal(SIGTERM, handler_interrupt);
+	signal(SIGINT,  handler_interrupt); // CTRL+c
+	signal(SIGTSTP, handler_interrupt); // CTRL+z
 }
 
 void termina_tutti_figli()
@@ -25,14 +28,12 @@ void termina_tutti_figli()
 
 void handler_interrupt(int segnale)
 {
-	if(segnale == SIGUSR1) {
-		if(getpid() != PID_PADRE) {
-			exit(0);
-		} else {
-			termina_tutti_figli();
-			distruggi_struttura_concorrenza(CONC_GLOBAL);
-			exit(1);
-		}
+	if(getpid() != PID_PADRE) {
+		exit(0);
+	} else {
+		termina_tutti_figli();
+		distruggi_struttura_concorrenza(CONC_GLOBAL);
+		exit(1);
 	}
 }
 

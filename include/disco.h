@@ -5,6 +5,7 @@
 
 #define DISKIO_BUFFER_SIZE 512
 
+/** Struttura che permette di bufferizzare l'input da file in lettura */
 struct BufferedReader 
 {
 	char buffer[DISKIO_BUFFER_SIZE];

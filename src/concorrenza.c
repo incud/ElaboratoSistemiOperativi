@@ -17,12 +17,14 @@ int crea_struttura_concorrenza(struct Concorrenza* conc, int ordine, int nProces
 	conc->nProcessi = nProcessi;
 
 	// setto a 0 tutte le chiavi (quelle che rimarranno a 0 non verranno distrutte - utile per la deallocazione di risorse in caso di errore)
-	conc->chiavi.idMatriceA = 0;
-	conc->chiavi.idMatriceB = 0;
-	conc->chiavi.idMatriceC = 0;
-	conc->chiavi.idCelle    = 0;
-	conc->chiavi.idSemafori = 0;
-	conc->chiavi.idCodaMessaggi = 0;
+	conc->chiavi.idMatriceA = -1;
+	conc->chiavi.idMatriceB = -1;
+	conc->chiavi.idMatriceC = -1;
+	conc->chiavi.idCelle    = -1;
+	conc->chiavi.idSemafori = -1;
+	conc->chiavi.idCodaMessaggi = -1;
+	conc->chiavi.idContatori    = -1;
+	conc->chiavi.idRisultato    = -1;
 
 	// creazione memoria condivisa
 	conc->chiavi.idMatriceA = shmget(IPC_PRIVATE, sizeof(int) * ordine * ordine,      CONCORRENZA_PERMESSI | IPC_CREAT | IPC_EXCL);
@@ -66,34 +68,62 @@ int crea_struttura_concorrenza(struct Concorrenza* conc, int ordine, int nProces
 
 int distruggi_struttura_concorrenza(struct Concorrenza* conc)
 {
-	if(conc->chiavi.idMatriceA > 0) {
+	stampa(STDOUT_FILENO, "Cancellazione delle strutture condivise:\n");
+
+	if(conc->chiavi.idMatriceA >= 0) {
 		if(shmctl(conc->chiavi.idMatriceA, IPC_RMID, NULL) < 0) {
 			stampa(STDERR_FILENO, "Errore durante chiusura area matrice A\n");
+		} else {
+			stampa(STDOUT_FILENO, "\tMatrice A cancellata\n");
 		}
 	}
-	if(conc->chiavi.idMatriceB > 0) {
+	if(conc->chiavi.idMatriceB >= 0) {
 		if(shmctl(conc->chiavi.idMatriceB, IPC_RMID, NULL) < 0) {
 			stampa(STDERR_FILENO, "Errore durante chiusura area matrice B\n");
+		} else {
+			stampa(STDOUT_FILENO, "\tMatrice B cancellata\n");
 		}
 	}
-	if(conc->chiavi.idMatriceC > 0) {
+	if(conc->chiavi.idMatriceC >= 0) {
 		if(shmctl(conc->chiavi.idMatriceC, IPC_RMID, NULL) < 0) {
 			stampa(STDERR_FILENO, "Errore durante chiusura area matrice C\n");
+		} else {
+			stampa(STDOUT_FILENO, "\tMatrice C cancellata\n");
 		}
 	}
-	if(conc->chiavi.idCelle > 0) {
+	if(conc->chiavi.idCelle >= 0) {
 		if(shmctl(conc->chiavi.idCelle, IPC_RMID, NULL) < 0) {
 			stampa(STDERR_FILENO, "Errore durante chiusura area celle\n");
+		} else {
+			stampa(STDOUT_FILENO, "\tArray di celle condivise cancellato\n");
 		}
 	}
-	if(conc->chiavi.idSemafori > 0) {
+	if(conc->chiavi.idSemafori >= 0) {
 		if(semctl(conc->chiavi.idSemafori, 0 /* semnum indifferente, li cancella tutti */, IPC_RMID) < 0) {
 			stampa(STDERR_FILENO, "Errore durante chiusura semafori\n");
+		} else {
+			stampa(STDOUT_FILENO, "\tSemafori cancellati\n");
 		}
 	}
-	if(conc->chiavi.idCodaMessaggi > 0) {
+	if(conc->chiavi.idCodaMessaggi >= 0) {
 		if(msgctl(conc->chiavi.idCodaMessaggi, IPC_RMID, NULL) < 0) {
 			stampa(STDERR_FILENO, "Errore durante chiusura semafori\n");
+		} else {
+			stampa(STDOUT_FILENO, "\tCoda di messaggi cancellata\n");
+		}
+	}
+	if(conc->chiavi.idContatori >= 0) {
+		if(shmctl(conc->chiavi.idContatori, IPC_RMID, NULL) < 0) {
+			stampa(STDERR_FILENO, "Errore durante chiusura area celle\n");
+		} else {
+			stampa(STDOUT_FILENO, "\tArray di contatori condivise cancellato\n");
+		}
+	}
+	if(conc->chiavi.idRisultato >= 0) {
+		if(shmctl(conc->chiavi.idRisultato, IPC_RMID, NULL) < 0) {
+			stampa(STDERR_FILENO, "Errore durante chiusura area celle\n");
+		} else {
+			stampa(STDOUT_FILENO, "\tCella risultato condivise cancellato\n");
 		}
 	}
 
