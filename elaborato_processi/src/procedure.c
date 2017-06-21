@@ -211,14 +211,10 @@ int avvia_procedura_lavoratore(struct Concorrenza* conc, int index)
 
 		switch(messaggio) {
 			case 'M':
-				sleep(5);
 				esegui_moltiplicazione(conc, index);
-				sleep(5);
 				break;
 			case 'S':
-				sleep(1);
 				esegui_somma(conc, index);
-				sleep(5);
 				break;
 			case 'E':
 				stampa(STDOUT_FILENO, "[Proc %i] Uscita\n", index);
@@ -233,7 +229,5 @@ int avvia_procedura_lavoratore(struct Concorrenza* conc, int index)
 		}
 
 		segnala_processo_libero(conc);
-
-		sleep(3);
 	}
 }

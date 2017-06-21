@@ -54,11 +54,11 @@ int crea_struttura_concorrenza(struct Concorrenza* conc, int ordine, int nProces
 		return -1;
 	}
 
-	if(inizializza_semafori(conc) < 0) {
+	if(inizializza_memoria_condivisa(conc) < 0) {
 		return -1;
 	}
 
-	if(inizializza_memoria_condivisa(conc) < 0) {
+	if(inizializza_semafori(conc) < 0) {
 		return -1;
 	}
 

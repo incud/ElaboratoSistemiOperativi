@@ -1,3 +1,8 @@
+/**
+ * @file
+ * @brief Funzioni a basso livello per la gestione della concorrenza
+ */
+
 #ifndef CONCORRENZA_H_
 #define CONCORRENZA_H_
 
@@ -19,30 +24,56 @@ struct Concorrenza
 {
 	/** chiavi delle system call shmget, msgget, semget */
 	struct Chiave {
+		/** id della matrice A */
 		int idMatriceA;
+		/** id della matrice B */
 		int idMatriceB;
+		/** id della matrice C */
 		int idMatriceC;
+		/** id vettore celle   */
 		int idCelle;
+		/** id semafori        */
 		int idSemafori;
+		/** id coda messaggi   */
 		int idCodaMessaggi;
+		/** id contatori       */
 		int idContatori;
+		/** id variabile risultato */
 		int idRisultato;
-	} chiavi; 
+	} 
+	/** struttura contenente le chiavi*/
+	chiavi; 
 
 	/** array condiviso di nProcessi celle che serve alla gestione dei processi da parte del processo padre */
 	struct Cella {
-		int libero; 	/** 1 se il processo è libero */
-		int i, j, riga; /** dati da inviare */
-		int pipe[2]; 	/** descrittori della pipe */
-	} *celle; 
+		/** 1 se il processo è libero */
+		int libero; 
+		/** dati da inviare: indice i della coppia (i,j) che identifica la cella di una matrice */	
+		int i;
+		/** dati da inviare: indice j della coppia (i,j) che identifica la cella di una matrice */	
+		int j;
+		/** dati da inviare: riga di cui fare la somma */
+		int riga; 
+		/** descrittori della pipe */
+		int pipe[2]; 	
+	} 
+	/** array di celle*/
+	*celle; 
 
-	int nProcessi; 		/** numero di processi */
-	int ordine;			/** ordine della matrice */
-	int* matriceA; 		/** indirizzo della matrice A (condivisa) */
-	int* matriceB;		/** indirizzo della matrice B (condivisa) */
-	int* matriceC;		/** indirizzo della matrice C (condivisa) */
-	int* contatori;		/** array di contatori (condivisi). All'i-esimo elemento di contatori corrisponde il contatore del numero di celle completate della i-esima riga della matrice C */ 
-	int* risultato;		/** cella risultato (condivisa) */
+	/** numero di processi */
+	int nProcessi; 
+	/** ordine della matrice */		
+	int ordine;		
+	/** indirizzo della matrice A (condivisa) */	
+	int* matriceA; 	
+	/** indirizzo della matrice B (condivisa) */	
+	int* matriceB;	
+	/** indirizzo della matrice C (condivisa) */	
+	int* matriceC;	
+	/** array di contatori (condivisi). All'i-esimo elemento di contatori corrisponde il contatore del numero di celle completate della i-esima riga della matrice C */ 	
+	int* contatori;		
+	/** cella risultato (condivisa) */
+	int* risultato;		
 };
 
 /* ================= CREAZIONE STRUTTURA ================= */
@@ -102,6 +133,7 @@ void aspetta_processo_libero(struct Concorrenza* conc);
 /**
  * Un processo lavoratore intento in una operazione di moltiplicazione chiama questa funzione per segnalare la terminazione del suo lavoro
  * @param[in] conc struttura
+ * @param[in] riga riga di cui si è completata la cella
  */
 void segnala_cella_della_riga_completata(struct Concorrenza* conc, int riga);
 
@@ -109,6 +141,7 @@ void segnala_cella_della_riga_completata(struct Concorrenza* conc, int riga);
  * Un processo lavoratore intento in una operazione di somma chiama questa funzione per aspettare che tutti i lavori di moltiplicazione
  * sulla riga a lui assegnata siano finiti
  * @param[in] conc struttura
+ * @param[in] riga riga da aspettare
  */
 void aspetta_intera_riga_completata(struct Concorrenza* conc, int riga);
 
@@ -143,7 +176,6 @@ int ottieni_numero_messaggi_coda(struct Concorrenza* conc, int* n);
 /**
  * Inizializza la memoria condivisa
  * @param[in] conc struttura
- * @param[out] n variabile da riempire
  * @return 0 se tutto ok, -1 altrimenti
  */
 int inizializza_memoria_condivisa(struct Concorrenza* conc);

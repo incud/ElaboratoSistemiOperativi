@@ -26,7 +26,12 @@ $(BUILDDIR)/procedure.o: $(SOURCEDIR)/procedure.c $(INCLUDEDIR)/procedure.h
 	@echo "Sto compilando" $@
 	@$(CC) $(CFLAGS) -c $< -o $@
 
-.PHONY: clean
+.PHONY: clean help
 clean:
 	@rm -rf $(BUILDDIR)
 	@mkdir $(BUILDDIR)
+
+help:
+	@echo "Esegui il comando 'make'."
+	@echo "Si suppone esista una cartella 'build' nella directory corrente. In caso alternativo crearla oppure eseguire 'make clean' e poi 'make'."
+	

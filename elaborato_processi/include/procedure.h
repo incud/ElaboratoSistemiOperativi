@@ -1,3 +1,8 @@
+/**
+ * @file
+ * @brief Utilizza i costrutti di concorrenza.h per creare funzioni ad alto livello
+ */
+
 #ifndef PROCEDURE_H_
 #define PROCEDURE_H_
 
@@ -8,7 +13,7 @@
 /**
  * Inserisce i dati necessari per il corretto uso del handler di interrupt (da codice e da comando CTRL+C)
  * @param[in] pidPadre pid del processo padre/gestore
- * @param[in] con struttura globale
+ * @param[in] conc struttura globale
  */
 void registra_padre_nel_handler_interrupt(int pidPadre, struct Concorrenza* conc);
 

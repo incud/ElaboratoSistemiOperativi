@@ -134,7 +134,7 @@ int stampa(int fileno, const char* formato, ...)
 
 int stampa_matrice_quadrata(const char* path, const int* matrice, const int ordine)
 {
-	int fileno = open(path, O_WRONLY | O_CREAT , 0666);
+	int fileno = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0666);
 	if(fileno < 0) { 
 		stampa(STDOUT_FILENO, "\tImpossibile aprire il file: %s\n", strerror(errno)); 
 		return -1; 

@@ -1,17 +1,28 @@
+/**
+ * @file
+ * @brief Il file gestisce le funzioni per l'input output da e verso file
+ */
+
 #ifndef DISCO_H_
 #define DISCO_H_
 
 #include <unistd.h> // definisce anche STDOUT_FILENO
 
+/** numero massimo di caratteri all'interno di un buffer */
 #define DISKIO_BUFFER_SIZE 512
 
 /** Struttura che permette di bufferizzare l'input da file in lettura */
 struct BufferedReader 
 {
+	/** buffer */
 	char buffer[DISKIO_BUFFER_SIZE];
+	/** numero di caratteri letti */
 	int letti;
+	/** ultimo carattere letto */
 	int ultimo;
+	/** file descriptore del file con cui si sta lavorando */
 	int fileno;
+	/** flag che indica la fine del file */
 	int fine;
 };
 
