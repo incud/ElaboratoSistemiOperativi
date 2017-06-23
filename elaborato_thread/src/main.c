@@ -18,7 +18,7 @@ int *matriceC = NULL;
 /** Cella che conterrà la somma di tutti gli elementi di C */
 int risultato = 0;
 /** Mutex del risultato */
-pthread_mutex_t lockRisultato;
+pthread_mutex_t lockRisultato; //, lockSignalHandler;
 /** Ordine delle matrici */
 int ordine = 0;
 
@@ -38,8 +38,19 @@ void initialize_global_data()
 	// allocazione mutex
 	if (pthread_mutex_init(&lockRisultato, NULL) != 0) {
         stampa(STDERR_FILENO, "Impossibile creare mutex\n");
+        free(matriceA); free(matriceB); free(matriceC);
 		exit(1);
     }
+
+    // gestione del thread che forza l'esecuzione dell'handler in un solo thread
+    // perchè in generale il comportamento è indefinito, il linux recente il segnale
+    // arriva alla root thread e basta
+    /* if (pthread_mutex_init(&lockSignalHandler, NULL) != 0) {
+        stampa(STDERR_FILENO, "Impossibile creare mutex\n");
+        free(matriceA); free(matriceB); free(matriceC);
+        pthread_mutex_destroy(&lockRisultato);
+		exit(1);
+    } */
 }
 
 /** Libera le risorse associate alle variabili globali */
@@ -49,6 +60,7 @@ void terminate_global_data()
 	free(matriceB);
 	free(matriceC);
 	pthread_mutex_destroy(&lockRisultato);
+	// pthread_mutex_destroy(&lockSignalHandler);
 }
 
 /** Gestore dei segnali
@@ -56,6 +68,8 @@ void terminate_global_data()
  */
 void signal_handler(int signal) 
 {
+	// pthread_mutex_lock(&lockSignalHandler);
+
 	stampa(STDOUT_FILENO, "Ricevuto segnale %s, terminazione\n", strsignal(signal));
 	terminate_global_data();
 	exit(0);
@@ -113,7 +127,7 @@ void* execute_work(void* argument)
 int main(int argc, char* argv[])
 {
 	int i;
-	pthread_t* tids;
+	pthread_t* tids = NULL;
 
 	// estraggo parametri da riga di comando
 	char *pathA, *pathB, *pathC;
@@ -153,6 +167,7 @@ int main(int argc, char* argv[])
 		data->j = i % ordine;
 		if(pthread_create(tids + i, NULL, &execute_work, data) != 0) {
 			stampa(STDERR_FILENO, "Non e' stato possibile allocare l'%i-esimo thread\n", i);
+			free(tids);
 			kill(getpid(), SIGTERM);
 		}
 	}
@@ -160,6 +175,7 @@ int main(int argc, char* argv[])
 		pthread_join(tids[i], NULL);
 	}
 	free(tids);
+	tids = NULL;
 
 	// creazione thread somma
 	tids = malloc(sizeof(pthread_t) * ordine);
@@ -169,6 +185,7 @@ int main(int argc, char* argv[])
 		data->riga = i;
 		if(pthread_create(tids + i, NULL, &execute_work, data) != 0) {
 			stampa(STDERR_FILENO, "Non e' stato possibile allocare l'%i-esimo thread\n", i);
+			free(tids);
 			kill(getpid(), SIGTERM);
 		}
 	}
@@ -176,6 +193,7 @@ int main(int argc, char* argv[])
 		pthread_join(tids[i], NULL);
 	}
 	free(tids);
+	tids = NULL;
 
 	// stampa risultato
 	stampa(STDOUT_FILENO, "Il risultato e': %i\n", risultato);
