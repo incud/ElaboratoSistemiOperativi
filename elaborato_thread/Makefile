@@ -18,7 +18,7 @@ $(BUILDDIR)/disco.o: $(SOURCEDIR)/disco.c $(INCLUDEDIR)/disco.h
 	@echo "Sto compilando" $@
 	@$(CC) $(CFLAGS) -c $< -o $@
 
-.PHONY: clean help
+.PHONY: clean help run
 clean:
 	@rm -rf $(BUILDDIR)
 	@mkdir $(BUILDDIR)
@@ -27,3 +27,5 @@ help:
 	@echo "Esegui il comando 'make'."
 	@echo "Si suppone esista una cartella 'build' nella directory corrente. In caso alternativo crearla oppure eseguire 'make clean' e poi 'make'."
 	
+run:
+	@./$(BUILDDIR)/$(TARGET) mat_a mat_b mat_c 3

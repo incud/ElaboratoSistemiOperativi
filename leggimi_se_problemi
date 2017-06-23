@@ -1,0 +1,12 @@
+Per compilare uno dei progetti:
+- spostarsi nella cartella del progetto
+- dare il comando
+	make clean
+- controllare che esista vuota la cartella build/ che conterrà l'eseguibile
+- dare il comando
+	make 
+- per ulteriori informazioni sulla compilazione eseguire
+	make help
+
+Per compilare la documentazione
+	doxygen doxyconf

@@ -223,13 +223,13 @@ void aspetta_intera_riga_completata(struct Concorrenza* conc, int riga)
 
 int manda_indice_in_coda(struct Concorrenza* conc, int indice)
 {
-	struct Messaggio { int type; int indice; } messaggio = { .type = 1 /* tipo >= 1 */, .indice = indice };
+	struct Messaggio { long int type; int indice; } messaggio = { .type = 1 /* tipo >= 1 */, .indice = indice };
 	return msgsnd(conc->chiavi.idCodaMessaggi, &messaggio, sizeof(int), 0 /* flag */);
 }
 
 int ricevi_indice_dalla_coda(struct Concorrenza* conc, int* indice)
 {
-	struct Messaggio { int type; int indice; } messaggio;
+	struct Messaggio { long int type; int indice; } messaggio;
 	int esito = msgrcv(conc->chiavi.idCodaMessaggi, &messaggio, sizeof(int), 0 /* ogni tipo di messaggio */, 0 /* flag */);
 	*indice = messaggio.indice;
 	return esito;
