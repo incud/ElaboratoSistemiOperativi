@@ -58,7 +58,7 @@ int leggi_carattere(struct BufferedReader* br, char* car)
 int leggi_intero(struct BufferedReader* br, int* intero)
 {
 	char car;
-	int esito;
+	int esito, segno = 1;
 
 	*intero = 0;
 
@@ -67,7 +67,14 @@ int leggi_intero(struct BufferedReader* br, int* intero)
 		esito = leggi_carattere(br, &car);
 		if(esito < 0) { return -1; }
 		if(esito == 0) { return 0; }
-	} while(car < '0' && car > '9');
+	} while(car < '0' && car > '9' && car != '-');
+
+	if(car == '-') {
+		segno = -1;
+		esito = leggi_carattere(br, &car);
+		if(esito < 0) { return -1; }
+		if(esito == 0) { return 0; }
+	}
 
 	// inizio a metter dentro le cifre (attento agli overflow!)
 	do {
@@ -76,9 +83,14 @@ int leggi_intero(struct BufferedReader* br, int* intero)
 
 		esito = leggi_carattere(br, &car);
 		if(esito < 0) { return -1; }
-		if(esito == 0) { return 0; }
+		if(esito == 0) { 
+			*intero *= segno;
+			return 0; 
+		}
 
 	} while(car >= '0' && car <= '9');
+
+	*intero *= segno;
 
 	return 0;
 }

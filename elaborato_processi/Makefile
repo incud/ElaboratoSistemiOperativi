@@ -36,5 +36,5 @@ help:
 	@echo "Si suppone esista una cartella 'build' nella directory corrente. In caso alternativo crearla oppure eseguire 'make clean' e poi 'make'."
 
 run:
-	@./$(BUILDDIR)/$(TARGET) mat_a mat_b mat_c 3 4
+	@./$(BUILDDIR)/$(TARGET) mat_a mat_b mat_c 4 4
 
